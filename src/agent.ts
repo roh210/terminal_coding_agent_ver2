@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import * as readline from "readline/promises";
 import { Agent } from "./agent/agent.js";
 import * as dotenv from "dotenv";
+import tools from "./agent/tools/index.js";
 
 dotenv.config();
 
@@ -17,7 +18,8 @@ async function main() {
     client,
     getUserMessage,
     showAgentMessage,
-    getToolConsent
+    getToolConsent,
+    tools
   );
   await agent.run();
 }

@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import * as readline from "readline/promises";
 import { Agent } from "./agent/agent.js";
 import * as dotenv from "dotenv";
+import tools from "./agent/tools/index.js";
 dotenv.config();
 main();
 async function main() {
@@ -9,7 +10,7 @@ async function main() {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
     });
-    const agent = new Agent(client, getUserMessage, showAgentMessage, getToolConsent);
+    const agent = new Agent(client, getUserMessage, showAgentMessage, getToolConsent, tools);
     await agent.run();
 }
 async function getUserMessage() {
@@ -22,7 +23,7 @@ async function getUserMessage() {
     return userMessage;
 }
 function showAgentMessage(message) {
-    console.log(`\n\u001b[93mClaude\u001b[0m: ${message}\n`);
+    console.log(`\n\u001b[93mLLM\u001b[0m: ${message}\n`);
 }
 async function getToolConsent(message) {
     const rl = readline.createInterface({
