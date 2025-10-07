@@ -1,3 +1,3 @@
 import { readFileTool } from "./readFile.js";
-
-export default [readFileTool];
+import { listFilesTool } from "./listFiles.js";
+export default [readFileTool, listFilesTool];
