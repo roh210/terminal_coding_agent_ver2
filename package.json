@@ -1,6 +1,19 @@
 {
+  "name": "terminal-coding-agent-ver2",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/agent.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/agent.js",
+    "dev": "tsc && node dist/agent.js"
+  },
   "devDependencies": {
     "@types/node": "^24.7.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "openai": "^6.2.0"
   }
 }
