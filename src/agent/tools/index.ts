@@ -1,3 +1,4 @@
 import { readFileTool } from "./readFile.js";
 import { listFilesTool } from "./listFiles.js";
-export default [readFileTool, listFilesTool];
+import { editFileTool } from "./editFile.js";
+export default [readFileTool, listFilesTool, editFileTool];
