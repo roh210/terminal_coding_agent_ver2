@@ -1,116 +1,116 @@
 import OpenAI from "openai";
-import { ToolDefinition } from "./types";
+import { AgentDependencies, Plan } from "./types.js";
+import { createPlan } from "./planning.js";
+import { formatPlan, formatPlanPlainText } from "./formatter.js";
+import { executeToolCalls } from "./execution.js";
+import {
+  runInference,
+  extractAssistantMessage,
+  hasToolCalls,
+} from "./inference.js";
+
 export class Agent {
-  constructor(
-    private client: OpenAI,
-    private getUserMessage: () => Promise<string>,
-    private showAgentMessage: (message: string) => void,
-    private getToolConsent: (message: string) => Promise<boolean>,
-    private tools: ToolDefinition[] = []
-  ) {}
+  private conversation: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+  private readUserInput: boolean = true;
+
+  constructor(private deps: AgentDependencies) {}
 
   async run() {
-    const conversation: OpenAI.Chat.ChatCompletionMessageParam[] = [];
     console.log("Chat with AI Agent (use 'ctrl-c' to exit)");
-    // insert ascii art here
-    let readUserInput = true;
 
     while (true) {
-      if (readUserInput) {
-        const userMessage: OpenAI.Chat.ChatCompletionMessageParam = {
-          role: "user",
-          content: await this.getUserMessage(),
-        };
-        conversation.push(userMessage);
-      }
       try {
-        const result = await this.runInference(conversation);
-        const message = result.choices[0].message;
-        // add assistant's response to conversation
-        conversation.push(message);
-        //handle tool calls if present
-        if (message.tool_calls && message.tool_calls.length > 0) {
-          readUserInput = false;
-
-          for (const toolCall of message.tool_calls) {
-            if (toolCall.type !== "function") continue;
-            const toolResult = await this.executeToolCall(
-              toolCall.id,
-              toolCall.function.name,
-              JSON.parse(toolCall.function.arguments || "{}")
-            );
-            conversation.push(toolResult);
+        if (this.readUserInput) {
+          const shouldProceed = await this.handleUserInput();
+          if (!shouldProceed) {
+            continue; // Skip inference if plan was rejected
           }
-        } else {
-          if (message.content) {
-            this.showAgentMessage(message.content);
-          }
-          readUserInput = true;
         }
+        await this.processInference();
       } catch (error) {
         console.error("Error: ", error);
-        readUserInput = true;
+        this.readUserInput = true;
       }
     }
   }
 
-  private async runInference(
-    conversation: OpenAI.Chat.ChatCompletionMessageParam[]
-  ): Promise<OpenAI.Chat.ChatCompletion> {
-    const openAITools: OpenAI.Chat.ChatCompletionTool[] = this.tools.map(
-      (tool) => ({
-        type: "function" as const,
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.input_schema,
-        },
-      })
-    );
+  /**
+   * Handles user input and planning phase
+   * Returns true if should proceed to inference, false if should skip
+   */
+  private async handleUserInput(): Promise<boolean> {
+    const userMessage: OpenAI.Chat.ChatCompletionMessageParam = {
+      role: "user",
+      content: await this.deps.getUserMessage(),
+    };
+    this.conversation.push(userMessage);
 
-    return this.client.chat.completions.create({
-      model: "deepseek/deepseek-chat-v3.1:free",
-      messages: conversation,
-      tools: openAITools,
-      max_tokens: 4096,
-    });
+    const plan = await createPlan(this.deps.client, this.conversation);
+
+    if (plan) {
+      const planApproved = await this.handlePlanApproval(plan);
+      if (!planApproved) {
+        this.deps.showAgentMessage(
+          "Plan rejected. Please refine your request."
+        );
+        // Remove the user message from conversation since we're not executing
+        this.conversation.pop();
+        this.readUserInput = true;
+        return false; // Don't proceed to inference
+      }
+    }
+
+    return true; // Proceed to inference
   }
 
-  private async executeToolCall(
-    id: string,
-    name: string,
-    input: unknown
-  ): Promise<OpenAI.Chat.ChatCompletionMessageParam> {
-    const tool = this.tools.find((t) => t.name === name);
-    if (!tool) {
-      return {
-        role: "tool" as const,
-        tool_call_id: id,
-        content: `Tool ${name} not found`,
-      };
-    }
-    const toolDescription = `${name}(${JSON.stringify(input)})`;
+  /**
+   * Shows plan to user and gets approval
+   */
+  private async handlePlanApproval(plan: Plan): Promise<boolean> {
+    const planText = formatPlan(plan);
+    console.log(planText);
 
-    if (!(await this.getToolConsent(toolDescription))) {
-      return {
-        role: "tool" as const,
-        tool_call_id: id,
-        content: `User denied consent to use tool ${name}`,
-      };
+    const approved = await this.deps.getPlanApproval("Execute this plan?");
+
+    if (approved) {
+      // Add plain text version to conversation (no ANSI codes)
+      const planPlainText = formatPlanPlainText(plan);
+      this.conversation.push({
+        role: "assistant",
+        content: `I will execute the following plan:\n${planPlainText}`,
+      });
     }
-    try {
-      const result = await tool.func(input);
-      return {
-        role: "tool" as const,
-        tool_call_id: id,
-        content: result,
-      };
-    } catch (error) {
-      return {
-        role: "tool" as const,
-        tool_call_id: id,
-        content: error instanceof Error ? error.message : String(error),
-      };
+
+    return approved;
+  }
+
+  /**
+   * Runs inference and handles the response
+   */
+  private async processInference(): Promise<void> {
+    const result = await runInference(
+      this.deps.client,
+      this.conversation,
+      this.deps.tools
+    );
+
+    const message = extractAssistantMessage(result);
+    this.conversation.push(message);
+
+    if (hasToolCalls(message)) {
+      const toolResults = await executeToolCalls(
+        message.tool_calls!,
+        this.deps.tools,
+        this.deps.getToolConsent
+      );
+
+      this.conversation.push(...toolResults);
+      this.readUserInput = false;
+    } else {
+      if (message.content) {
+        this.deps.showAgentMessage(message.content);
+      }
+      this.readUserInput = true;
     }
   }
 }
