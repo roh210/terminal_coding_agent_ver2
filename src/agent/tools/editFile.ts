@@ -66,6 +66,10 @@ export const editFileTool: ToolDefinition = {
         } in ${path}`;
       } else if (oldStr === "") {
         // create new file with new_str as content
+        // First ensure parent directory exists
+        const parentDir = nodePath.dirname(resolvedPath);
+        await fs.mkdir(parentDir, { recursive: true });
+
         await fs.writeFile(resolvedPath, newStr, "utf-8");
         return `File created at ${path}`;
       }
