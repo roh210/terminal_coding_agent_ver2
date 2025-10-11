@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import nodePath from "path";
-import { ToolDefinition } from ".././types.js";
+import { ToolDefinition, ReadFileInput } from ".././types.js";
 
 export const readFileTool: ToolDefinition = {
   name: "read_file",
@@ -16,8 +16,14 @@ export const readFileTool: ToolDefinition = {
     },
     required: ["path"],
   },
-  func: async (args: any): Promise<string> => {
-    const path: string = args.path;
+  func: async (args): Promise<string> => {
+    // Type guard to ensure we have the correct input type
+    if (!("path" in args)) {
+      throw new Error("Missing required parameter: path");
+    }
+
+    const input = args as ReadFileInput;
+    const path: string = input.path;
     const resolvedPath = nodePath.resolve(path);
 
     if (!existsSync(resolvedPath)) {

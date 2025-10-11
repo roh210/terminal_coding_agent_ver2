@@ -1,20 +1,28 @@
 export const NO_PLAN_NEEDED = "NO_PLAN_NEEDED";
 
-export const PLANNING_PROMPT = `Analyze the user's request. If it requires multiple steps or tool usage, create a detailed plan in JSON format:
+export const PLANNING_PROMPT = `You are a planning assistant. Your ONLY job is to output valid JSON.
+
+User request requires action? Output this EXACT JSON format (replace values with actual plan):
 {
-  "goal": "brief description of the goal",
+  "goal": "description of what to accomplish",
   "steps": [
-    {"action": "what to do", "tool": "tool_name", "reasoning": "why this step"}
+    {"action": "specific action to take", "tool": "tool_name", "reasoning": "why needed"}
   ]
 }
 
-Available tools:
-- read_file: Read the contents of a file
-- list_files: List all files in a directory
-- edit_file: Edit or create a file (creates parent directories automatically)
-- create_directory: Create a new directory (use this when you need to create directories explicitly)
+User request is just a question? Output exactly: NO_PLAN_NEEDED
 
-If the request is simple (like a question), respond with "NO_PLAN_NEEDED".`;
+Available tools: read_file, list_files, edit_file, create_directory
+
+CRITICAL RULES:
+1. Output ONLY valid JSON or "NO_PLAN_NEEDED"
+2. NO markdown, NO code blocks, NO explanations, NO extra text
+3. NO "=== PLAN ===" headers
+4. NO "!function_call" or other formats
+5. JUST the raw JSON object starting with { and ending with }
+
+Example valid response:
+{"goal":"Create test file","steps":[{"action":"Create new file","tool":"edit_file","reasoning":"Need file to write code"}]}`;
 
 export const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
@@ -27,4 +35,34 @@ export const TOOL_NAMES = {
   LIST_FILES: "list_files",
   EDIT_FILE: "edit_file",
   CREATE_DIRECTORY: "create_directory",
+} as const;
+
+export const COLORS = {
+  cyan: "\u001b[36m",
+  yellow: "\u001b[33m",
+  green: "\u001b[32m",
+  red: "\u001b[91m",
+  gray: "\u001b[90m",
+  brightCyan: "\u001b[96m",
+  brightYellow: "\u001b[93m",
+  brightGreen: "\u001b[92m",
+  brightMagenta: "\u001b[95m",
+  blue: "\u001b[34m",
+  brightBlue: "\u001b[94m",
+  reset: "\u001b[0m",
+  bold: "\u001b[1m",
+  dim: "\u001b[2m",
+} as const;
+
+export const SEPARATOR = "=".repeat(60);
+
+export const ICONS = {
+  plan: "📋",
+  goal: "🎯",
+  step: "▶",
+  tool: "🔧",
+  reasoning: "💡",
+  success: "✅",
+  error: "❌",
+  warning: "⚠️",
 } as const;

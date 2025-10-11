@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ToolDefinition } from "../types.js";
+import { ToolDefinition, CreateDirectoryInput } from "../types.js";
 
 /**
  * Creates a directory (and parent directories if needed)
@@ -19,9 +19,15 @@ export const createDirectoryTool: ToolDefinition = {
     },
     required: ["path"],
   },
-  func: async (args: { path: string }): Promise<string> => {
+  func: async (args): Promise<string> => {
+    // Type guard to ensure we have the correct input type
+    if (!("path" in args)) {
+      throw new Error("Missing required parameter: path");
+    }
+
+    const input = args as CreateDirectoryInput;
     try {
-      const dirPath = path.resolve(args.path);
+      const dirPath = path.resolve(input.path);
 
       // Create directory recursively
       fs.mkdirSync(dirPath, { recursive: true });

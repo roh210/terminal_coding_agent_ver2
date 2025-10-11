@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import nodePath from "path";
-import { ToolDefinition } from "./../types.js";
+import { ToolDefinition, EditFileInput } from "./../types.js";
 
 export const editFileTool: ToolDefinition = {
   name: "edit_file",
@@ -25,10 +25,16 @@ export const editFileTool: ToolDefinition = {
     required: ["path", "old_str", "new_str"],
   },
 
-  func: async (args: any): Promise<string> => {
-    const path: string = args.path;
-    const oldStr: string = args.old_str;
-    const newStr: string = args.new_str;
+  func: async (args): Promise<string> => {
+    // Type guard to ensure we have the correct input type
+    if (!("path" in args && "old_str" in args && "new_str" in args)) {
+      throw new Error("Missing required parameters: path, old_str, new_str");
+    }
+
+    const input = args as EditFileInput;
+    const path: string = input.path;
+    const oldStr: string = input.old_str;
+    const newStr: string = input.new_str;
     const resolvedPath = nodePath.resolve(path);
 
     //Validate that old_str and new_str are different

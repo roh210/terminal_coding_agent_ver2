@@ -1,9 +1,14 @@
+#!/usr/bin/env node
 import OpenAI from "openai";
-import * as readline from "readline/promises";
+import React from "react";
+import { render } from "ink";
 import { Agent } from "./agent/agent.js";
 import * as dotenv from "dotenv";
 import tools from "./agent/tools/index.js";
 import { formatToolConsentRequest } from "./agent/formatter.js";
+import { AutocompleteInput } from "./components/AutocompleteInput.js";
+import { ConfirmPrompt } from "./components/ConfirmPrompt.js";
+import { COLORS } from "./agent/constants.js";
 
 dotenv.config();
 
@@ -27,48 +32,66 @@ async function main() {
 }
 
 async function getUserMessage(): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+  return new Promise((resolve) => {
+    const { unmount } = render(
+      React.createElement(AutocompleteInput, {
+        onSubmit: (value: string) => {
+          unmount();
+          // Small delay to allow Ink to fully cleanup
+          setTimeout(() => {
+            resolve(value);
+          }, 50);
+        },
+      })
+    );
   });
-  const userMessage = await rl.question("\u001b[94mYou\u001b[0m:");
-  rl.close();
-  return userMessage;
 }
 
 function showAgentMessage(message: string): void {
-  console.log(`\n\u001b[93mLLM\u001b[0m: ${message}\n`);
+  console.log(`\n${COLORS.brightYellow}LLM${COLORS.reset}: ${message}\n`);
 }
 
 async function getPlanApproval(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+  return new Promise((resolve) => {
+    const { unmount } = render(
+      React.createElement(ConfirmPrompt, {
+        message: `${COLORS.brightMagenta}${message}${COLORS.reset}`,
+        defaultValue: true,
+        onSubmit: (value: boolean) => {
+          unmount();
+          // Small delay to allow Ink to fully cleanup
+          setTimeout(() => {
+            resolve(value);
+          }, 50);
+        },
+      })
+    );
   });
-
-  const approval = await rl.question(`\u001b[95m${message}\u001b[0m [yes]: `);
-  rl.close();
-
-  return approval === "" || approval.toLowerCase() === "yes";
 }
 
 async function getToolConsent(message: string): Promise<boolean> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
   // Parse tool name and arguments from message
   const match = message.match(/^(\w+)\((.*)\)$/s);
   const formattedMessage = match
     ? formatToolConsentRequest(match[1], JSON.parse(match[2]))
     : message;
 
-  const consent = await rl.question(
-    `\n\u001b[92mTool request\u001b[0m: ${formattedMessage}\n` +
-      "\u001b[93mAgent\u001b[0m: Continue? [yes]: "
-  );
-  rl.close();
-
-  return consent === "" || consent.toLowerCase() === "yes";
+  const fullMessage =
+    `\n${COLORS.brightGreen}Tool request${COLORS.reset}: ${formattedMessage}\n` +
+    `${COLORS.brightYellow}Agent${COLORS.reset}: Continue?`;
+  return new Promise((resolve) => {
+    const { unmount } = render(
+      React.createElement(ConfirmPrompt, {
+        message: fullMessage,
+        defaultValue: true,
+        onSubmit: (value: boolean) => {
+          unmount();
+          // Small delay to allow Ink to fully cleanup
+          setTimeout(() => {
+            resolve(value);
+          }, 50);
+        },
+      })
+    );
+  });
 }

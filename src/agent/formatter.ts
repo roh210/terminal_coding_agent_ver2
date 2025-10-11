@@ -1,33 +1,5 @@
-import { Plan } from "./types.js";
-
-const COLORS = {
-  cyan: "\u001b[36m",
-  yellow: "\u001b[33m",
-  green: "\u001b[32m",
-  red: "\u001b[91m",
-  gray: "\u001b[90m",
-  brightCyan: "\u001b[96m",
-  brightYellow: "\u001b[93m",
-  brightGreen: "\u001b[92m",
-  brightMagenta: "\u001b[95m",
-  blue: "\u001b[34m",
-  brightBlue: "\u001b[94m",
-  reset: "\u001b[0m",
-  bold: "\u001b[1m",
-  dim: "\u001b[2m",
-} as const;
-
-const SEPARATOR = "=".repeat(60);
-const ICONS = {
-  plan: "📋",
-  goal: "🎯",
-  step: "▶",
-  tool: "🔧",
-  reasoning: "💡",
-  success: "✅",
-  error: "❌",
-  warning: "⚠️",
-} as const;
+import { Plan, ToolInput } from "./types.js";
+import { COLORS, SEPARATOR, ICONS } from "./constants.js";
 
 /**
  * Formats a plan into a human-readable, colorful string
@@ -145,14 +117,14 @@ export const formatPlanWithJson = (plan: Plan): string => {
 /**
  * Type guard to check if input has a path property
  */
-const hasPath = (input: unknown): input is { path: string } => {
-  return typeof input === "object" && input !== null && "path" in input;
+const hasPath = (input: ToolInput): input is { path: string } => {
+  return "path" in input && typeof input.path === "string";
 };
 
 /**
  * Formats the result of a read_file tool call
  */
-const formatReadFileResult = (input: unknown, result: string): string => {
+const formatReadFileResult = (input: ToolInput, result: string): string => {
   const filePath = hasPath(input) ? input.path : "unknown";
   let formatted = `${COLORS.yellow}=== File: ${filePath}${COLORS.reset}\n`;
   formatted += `${COLORS.cyan}${SEPARATOR}${COLORS.reset}\n`;
@@ -165,7 +137,7 @@ const formatReadFileResult = (input: unknown, result: string): string => {
 /**
  * Formats the result of a list_files tool call
  */
-const formatListFilesResult = (input: unknown, result: string): string => {
+const formatListFilesResult = (input: ToolInput, result: string): string => {
   const dirPath = hasPath(input) ? input.path || "." : ".";
   let formatted = `${COLORS.yellow}=== Directory: ${dirPath}${COLORS.reset}\n`;
   formatted += `${COLORS.cyan}${SEPARATOR}${COLORS.reset}\n`;
@@ -181,7 +153,7 @@ const formatListFilesResult = (input: unknown, result: string): string => {
 /**
  * Formats the result of an edit_file tool call
  */
-const formatEditFileResult = (input: unknown, result: string): string => {
+const formatEditFileResult = (input: ToolInput, result: string): string => {
   const editedFile = hasPath(input) ? input.path : "unknown";
   let formatted = `${COLORS.yellow}=== Edited: ${editedFile}${COLORS.reset}\n`;
   formatted += `${COLORS.cyan}${SEPARATOR}${COLORS.reset}\n`;
@@ -193,7 +165,7 @@ const formatEditFileResult = (input: unknown, result: string): string => {
 /**
  * Formats a generic tool result
  */
-const formatGenericResult = (_input: unknown, result: string): string => {
+const formatGenericResult = (_input: ToolInput, result: string): string => {
   // Ensure result is a string (defensive coding)
   const resultStr =
     typeof result === "string" ? result : JSON.stringify(result, null, 2);
@@ -205,19 +177,21 @@ const formatGenericResult = (_input: unknown, result: string): string => {
  */
 export const formatToolResult = (
   toolName: string,
-  input: unknown,
+  input: ToolInput,
   result: string
 ): string => {
   let formatted = `\n${COLORS.cyan}${SEPARATOR}${COLORS.reset}\n`;
   formatted += `${COLORS.cyan}=== Tool: ${toolName}${COLORS.reset}\n`;
   formatted += `${COLORS.cyan}${SEPARATOR}${COLORS.reset}\n`;
 
-  const formatters: Record<string, (input: unknown, result: string) => string> =
-    {
-      read_file: formatReadFileResult,
-      list_files: formatListFilesResult,
-      edit_file: formatEditFileResult,
-    };
+  const formatters: Record<
+    string,
+    (input: ToolInput, result: string) => string
+  > = {
+    read_file: formatReadFileResult,
+    list_files: formatListFilesResult,
+    edit_file: formatEditFileResult,
+  };
 
   const formatter = formatters[toolName] || formatGenericResult;
   formatted += formatter(input, result);

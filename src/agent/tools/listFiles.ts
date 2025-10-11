@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import nodePath from "path";
-import { ToolDefinition } from "../types.js";
+import { ToolDefinition, ListFilesInput } from "../types.js";
 
 export const listFilesTool: ToolDefinition = {
   name: "list_files",
@@ -16,8 +16,10 @@ export const listFilesTool: ToolDefinition = {
     },
     required: [],
   },
-  func: async (args: any): Promise<string> => {
-    const path: string = args.path ?? ".";
+  func: async (args): Promise<string> => {
+    // ListFilesInput allows path to be optional
+    const input = args as ListFilesInput;
+    const path: string = input.path ?? ".";
     const rPath = nodePath.resolve(path);
 
     //Check if path exists and is a directory

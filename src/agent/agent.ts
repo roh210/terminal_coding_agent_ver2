@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { AgentDependencies, Plan } from "./types.js";
-import { createPlan } from "./planning.js";
+import { createPlan } from "./planning/index.js";
 import { formatPlan, formatPlanPlainText } from "./formatter.js";
 import { executeToolCalls } from "./execution.js";
 import {

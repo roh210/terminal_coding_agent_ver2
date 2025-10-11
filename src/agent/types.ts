@@ -8,7 +8,7 @@ export type ToolDefinition = {
     properties: Record<string, any>;
     required: string[];
   };
-  func: (args: any) => Promise<string> | string;
+  func: (args: ToolInput) => Promise<string> | string;
 };
 
 export type PlanStep = {
@@ -31,7 +31,28 @@ export type AgentDependencies = {
   getPlanApproval: (plan: string) => Promise<boolean>;
 };
 
+// Specific tool input types
+export type ReadFileInput = {
+  path: string;
+};
+
+export type ListFilesInput = {
+  path?: string;
+};
+
+export type EditFileInput = {
+  path: string;
+  old_str: string;
+  new_str: string;
+};
+
+export type CreateDirectoryInput = {
+  path: string;
+};
+
+// Union of all possible tool inputs
 export type ToolInput =
-  | { path: string }
-  | { path?: string }
-  | Record<string, unknown>;
+  | ReadFileInput
+  | ListFilesInput
+  | EditFileInput
+  | CreateDirectoryInput;

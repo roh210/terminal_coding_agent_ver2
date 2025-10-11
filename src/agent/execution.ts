@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { ToolDefinition } from "./types.js";
+import { ToolDefinition, ToolInput } from "./types.js";
 import { formatToolResult, formatError } from "./formatter.js";
 
 /**
@@ -9,16 +9,23 @@ import { formatToolResult, formatError } from "./formatter.js";
 export const parseToolArguments = (
   argsString: string,
   toolName: string
-): Record<string, unknown> => {
+): ToolInput => {
   try {
-    return JSON.parse(argsString || "{}");
+    const parsed = JSON.parse(argsString || "{}");
+
+    // Clean up @ symbols from file paths (used in autocomplete UI)
+    if (parsed.path && typeof parsed.path === "string") {
+      parsed.path = parsed.path.replace(/^@/, "");
+    }
+
+    return parsed;
   } catch (error) {
     console.error(
       `Failed to parse tool arguments for ${toolName}:`,
       argsString
     );
     console.error("Parse error:", error);
-    return {};
+    return {} as ToolInput;
   }
 };
 
@@ -41,7 +48,7 @@ export const createToolResponse = (
  */
 export const executeSingleTool = async (
   tool: ToolDefinition,
-  input: unknown,
+  input: ToolInput,
   getToolConsent: (message: string) => Promise<boolean>
 ): Promise<{ result: string; error?: string }> => {
   const toolDescription = `${tool.name}(${JSON.stringify(input)})`;
@@ -72,7 +79,7 @@ export const executeSingleTool = async (
 export const executeToolCall = async (
   id: string,
   name: string,
-  input: unknown,
+  input: ToolInput,
   tools: ToolDefinition[],
   getToolConsent: (message: string) => Promise<boolean>
 ): Promise<OpenAI.Chat.ChatCompletionMessageParam> => {
