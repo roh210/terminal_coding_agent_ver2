@@ -12,7 +12,7 @@ User request requires action? Output this EXACT JSON format (replace values with
 
 User request is just a question? Output exactly: NO_PLAN_NEEDED
 
-Available tools: read_file, list_files, edit_file, create_directory
+Available tools: read_file, list_files, edit_file, create_directory, undo_edit, show_diff, list_recent_edits
 
 CRITICAL RULES:
 1. Output ONLY valid JSON or "NO_PLAN_NEEDED"
@@ -35,6 +35,9 @@ export const TOOL_NAMES = {
   LIST_FILES: "list_files",
   EDIT_FILE: "edit_file",
   CREATE_DIRECTORY: "create_directory",
+  UNDO_EDIT: "undo_edit",
+  SHOW_DIFF: "show_diff",
+  LIST_RECENT_EDITS: "list_recent_edits",
 } as const;
 
 export const COLORS = {

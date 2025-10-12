@@ -9,8 +9,15 @@ import { formatToolConsentRequest } from "./agent/formatter.js";
 import { AutocompleteInput } from "./components/AutocompleteInput.js";
 import { ConfirmPrompt } from "./components/ConfirmPrompt.js";
 import { COLORS } from "./agent/constants.js";
+import { fileURLToPath } from "url";
+import path from "path";
 
-dotenv.config();
+// Get the directory where this script is located (not where it's run from)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from the agent's directory, not the current working directory
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 main();
 

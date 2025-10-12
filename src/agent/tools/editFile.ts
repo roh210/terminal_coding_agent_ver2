@@ -1,7 +1,11 @@
 import fs from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import nodePath from "path";
 import { ToolDefinition, EditFileInput } from "./../types.js";
+import { UndoManager } from "../versionControl/index.js";
+
+// Initialize undo manager with current working directory
+const undoManager = new UndoManager(process.cwd());
 
 export const editFileTool: ToolDefinition = {
   name: "edit_file",
@@ -43,12 +47,15 @@ export const editFileTool: ToolDefinition = {
         `'old_str' and 'new_str' must be different from each other`
       );
     }
+
     try {
       let fileContent: string;
+      let userIntent =
+        oldStr === "" ? `Create new file: ${path}` : `Edit file: ${path}`;
 
       // check if file exists
       if (existsSync(resolvedPath) && oldStr !== "") {
-        // read existing file content
+        // read existing file content (BEFORE edit)
         fileContent = await fs.readFile(resolvedPath, "utf-8");
 
         // check if old_str exists in the file
@@ -58,6 +65,22 @@ export const editFileTool: ToolDefinition = {
         // replace all occurences of old_str with new_str
         const splitParts = fileContent.split(oldStr);
         const newContent = splitParts.join(newStr);
+
+        // Record edit in undo buffer
+        try {
+          undoManager.recordEdit(
+            resolvedPath,
+            fileContent,
+            newContent,
+            userIntent
+          );
+          console.log(`� Undo available for ${path}`);
+        } catch (error) {
+          console.warn(
+            "⚠️  Failed to record undo:",
+            error instanceof Error ? error.message : String(error)
+          );
+        }
 
         // write the modified content back to the file
         await fs.writeFile(resolvedPath, newContent, "utf-8");
@@ -76,7 +99,20 @@ export const editFileTool: ToolDefinition = {
         const parentDir = nodePath.dirname(resolvedPath);
         await fs.mkdir(parentDir, { recursive: true });
 
+        // Write the new file
         await fs.writeFile(resolvedPath, newStr, "utf-8");
+
+        // Record in undo buffer (no "before" content for new files)
+        try {
+          undoManager.recordEdit(resolvedPath, "", newStr, userIntent);
+          console.log(`� Undo available for ${path}`);
+        } catch (error) {
+          console.warn(
+            "⚠️  Failed to record undo:",
+            error instanceof Error ? error.message : String(error)
+          );
+        }
+
         return `File created at ${path}`;
       }
       throw new Error(`File ${path} does not exist`);

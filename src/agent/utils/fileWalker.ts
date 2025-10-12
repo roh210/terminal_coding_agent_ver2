@@ -45,13 +45,13 @@ export async function walkDirectory(
 }
 
 /**
- * Gets all files and directories in the src/ directory
- * @returns Array of file and directory paths relative to project root
+ * Gets all files and directories in the current working directory
+ * @returns Array of file and directory paths relative to current working directory
  */
 export async function getSrcFiles(): Promise<string[]> {
-  const srcPath = path.join(process.cwd(), "src");
-  const items = await walkDirectory(srcPath);
+  const workingDir = process.cwd();
+  const items = await walkDirectory(workingDir);
 
-  // Prepend 'src/' to each path for clarity
-  return items.map((item) => `src/${item.replace(/\\/g, "/")}`);
+  // Return paths relative to working directory
+  return items.map((item) => item.replace(/\\/g, "/"));
 }
