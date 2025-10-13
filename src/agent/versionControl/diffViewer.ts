@@ -1,4 +1,5 @@
 import { COLORS } from "../constants.js";
+import { diffLines, Change, createPatch, diffTrimmedLines } from "diff";
 
 /**
  * DiffLine represents a single line in a diff
@@ -205,5 +206,90 @@ export class DiffViewer {
     }
 
     return parts.join(" ");
+  }
+
+  /**
+   * Format a line-by-line diff with colors and line numbers
+   * Similar to git diff output - uses smart trimming to ignore trailing whitespace
+   */
+  static formatLineDiff(
+    before: string,
+    after: string,
+    filePath: string,
+    contextLines: number = 3
+  ): string {
+    // Use diffTrimmedLines for smarter comparison (ignores leading/trailing whitespace per line)
+    const changes = diffTrimmedLines(before, after);
+
+    const result: string[] = [];
+
+    // Add file header (git-style)
+    result.push(`${COLORS.cyan}--- a/${filePath}${COLORS.reset}`);
+    result.push(`${COLORS.cyan}+++ b/${filePath}${COLORS.reset}`);
+
+    let additions = 0;
+    let deletions = 0;
+    let oldLineNum = 1;
+    let newLineNum = 1;
+
+    // Calculate line ranges for hunk header
+    let oldLines = 0;
+    let newLines = 0;
+    for (const change of changes) {
+      const count = change.count || 0;
+      if (change.removed) oldLines += count;
+      else if (change.added) newLines += count;
+      else {
+        oldLines += count;
+        newLines += count;
+      }
+    }
+
+    // Add hunk header @@ -old +new @@
+    result.push(
+      `${COLORS.cyan}@@ -${oldLineNum},${oldLines} +${newLineNum},${newLines} @@${COLORS.reset}`
+    );
+
+    // Process each change
+    for (const change of changes) {
+      const lines = change.value.split("\n").filter((l, i, arr) => {
+        // Keep all lines except the last empty one (from trailing newline)
+        return i < arr.length - 1 || l.length > 0;
+      });
+
+      for (const line of lines) {
+        if (change.added) {
+          result.push(`${COLORS.green}+${line}${COLORS.reset}`);
+          additions++;
+          newLineNum++;
+        } else if (change.removed) {
+          result.push(`${COLORS.red}-${line}${COLORS.reset}`);
+          deletions++;
+          oldLineNum++;
+        } else {
+          // Context line - unchanged
+          result.push(`${COLORS.dim} ${line}${COLORS.reset}`);
+          oldLineNum++;
+          newLineNum++;
+        }
+      }
+    }
+
+    // Add summary stats
+    result.push("");
+    const stats = `${COLORS.bold}1 file changed${COLORS.reset}`;
+    const addStats =
+      additions > 0
+        ? `${COLORS.green}${additions} insertions(+)${COLORS.reset}`
+        : "";
+    const delStats =
+      deletions > 0
+        ? `${COLORS.red}${deletions} deletions(-)${COLORS.reset}`
+        : "";
+
+    const statsParts = [stats, addStats, delStats].filter((s) => s.length > 0);
+    result.push(statsParts.join(", "));
+
+    return result.join("\n");
   }
 }

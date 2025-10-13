@@ -30,9 +30,10 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   // Update suggestions when input changes
   useEffect(() => {
     const lastAtIndex = input.lastIndexOf("@");
+    const lastExclamationIndex = input.lastIndexOf("!");
 
-    // Check if we're in file mode (@ detected)
-    if (lastAtIndex !== -1) {
+    // Check if we're in file mode (@ detected and it's after !)
+    if (lastAtIndex !== -1 && lastAtIndex > lastExclamationIndex) {
       // Refresh file list when user types @ to get latest files
       getSrcFiles().then((freshFiles) => {
         setFileList(freshFiles);
@@ -44,8 +45,19 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         setShowSuggestions(filtered.length > 0);
         setSelectedIndex(0);
       });
+    } else if (
+      lastExclamationIndex !== -1 &&
+      lastExclamationIndex > lastAtIndex
+    ) {
+      // Tool mode with ! trigger
+      const afterExclamation = input.slice(lastExclamationIndex);
+      const filtered = filterTools(afterExclamation);
+      setSuggestions(filtered);
+      setMode("tools");
+      setShowSuggestions(filtered.length > 0);
+      setSelectedIndex(0);
     } else {
-      // Tool mode - show tools matching the input
+      // Default: show tools when typing without special character
       const filtered = filterTools(input);
       setSuggestions(filtered);
       setMode("tools");
@@ -77,8 +89,17 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         setInput(newInput);
         setShowSuggestions(false);
       } else {
-        // Replace input with selected tool
-        setInput(selected);
+        // Tool mode - replace from ! onwards or entire input
+        const lastExclamationIndex = input.lastIndexOf("!");
+        if (lastExclamationIndex !== -1) {
+          // Replace from ! onwards with selected tool
+          const newInput =
+            input.slice(0, lastExclamationIndex) + "!" + selected;
+          setInput(newInput);
+        } else {
+          // Replace entire input with selected tool
+          setInput(selected);
+        }
         setShowSuggestions(false);
       }
     } else if (key.escape) {
@@ -87,8 +108,8 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   });
 
   const handleSubmit = (value: string) => {
-    // Clean up the input: remove @ symbols used for file browsing
-    const cleanedValue = value.replace(/@/g, "");
+    // Clean up the input: remove @ and ! symbols used for browsing
+    const cleanedValue = value.replace(/@/g, "").replace(/!/g, "");
     onSubmit(cleanedValue);
   };
 
@@ -118,7 +139,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       {!showSuggestions && input.length === 0 && (
         <Box marginTop={1}>
           <Text dimColor>
-            💡 Tip: Start typing for tool suggestions, or use @ to browse files
+            💡 Tip: Use ! for tools, @ for files, or just start typing
           </Text>
         </Box>
       )}

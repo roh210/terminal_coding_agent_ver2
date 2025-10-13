@@ -12,7 +12,7 @@ User request requires action? Output this EXACT JSON format (replace values with
 
 User request is just a question? Output exactly: NO_PLAN_NEEDED
 
-Available tools: read_file, list_files, edit_file, create_directory, undo_edit, show_diff, list_recent_edits
+Available tools: read_file, list_files, edit_file, create_directory, undo_edit, show_diff, list_recent_edits, debug_buffer
 
 CRITICAL RULES:
 1. Output ONLY valid JSON or "NO_PLAN_NEEDED"
@@ -24,7 +24,7 @@ CRITICAL RULES:
 Example valid response:
 {"goal":"Create test file","steps":[{"action":"Create new file","tool":"edit_file","reasoning":"Need file to write code"}]}`;
 
-export const DEFAULT_MODEL = "deepseek/deepseek-chat";
+export const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -38,6 +38,7 @@ export const TOOL_NAMES = {
   UNDO_EDIT: "undo_edit",
   SHOW_DIFF: "show_diff",
   LIST_RECENT_EDITS: "list_recent_edits",
+  DEBUG_BUFFER: "debug_buffer",
 } as const;
 
 export const COLORS = {

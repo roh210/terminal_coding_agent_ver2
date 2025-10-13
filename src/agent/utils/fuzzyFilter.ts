@@ -27,12 +27,14 @@ export function fuzzyFilter(
 
 /**
  * Filters tool suggestions based on user input
- * @param query - User input
+ * @param query - User input (may have ! prefix)
  * @returns Filtered tool names
  */
 export function filterTools(query: string): string[] {
+  // Remove ! prefix for matching
+  const cleanQuery = query.replace(/^!/, "");
   const toolNamesArray = Object.values(TOOL_NAMES);
-  return fuzzyFilter(query, toolNamesArray, 5);
+  return fuzzyFilter(cleanQuery, toolNamesArray, 8);
 }
 
 /**

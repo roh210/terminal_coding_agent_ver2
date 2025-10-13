@@ -36,52 +36,19 @@ export const showDiffTool: ToolDefinition = {
         return `No recent edit found for ${path}. File was not recently edited or undo buffer limit reached.`;
       }
 
-      // Create a simple diff output
+      // Create header
       const result: string[] = [];
-
       result.push(`\n${"=".repeat(60)}`);
       result.push(`📝 Diff for: ${path}`);
       result.push(`🕐 Edited: ${new Date(edit.timestamp).toLocaleString()}`);
       result.push(`💡 Intent: ${edit.userIntent}`);
       result.push(`${"=".repeat(60)}\n`);
 
-      // Show before and after content
-      const beforeLines = edit.before.split("\n");
-      const afterLines = edit.after.split("\n");
-
-      // Simple line-by-line comparison
-      const maxLines = Math.max(beforeLines.length, afterLines.length);
-      let hasChanges = false;
-
-      for (let i = 0; i < maxLines; i++) {
-        const beforeLine = beforeLines[i] ?? "";
-        const afterLine = afterLines[i] ?? "";
-
-        if (beforeLine !== afterLine) {
-          hasChanges = true;
-          if (beforeLine) {
-            result.push(`- ${beforeLine}`);
-          }
-          if (afterLine) {
-            result.push(`+ ${afterLine}`);
-          }
-        }
-      }
-
-      if (!hasChanges) {
-        result.push("(No differences found)");
-      }
+      // Use enhanced DiffViewer for colored diff output
+      const diff = DiffViewer.formatLineDiff(edit.before, edit.after, path);
+      result.push(diff);
 
       result.push(`\n${"=".repeat(60)}`);
-      result.push(`📊 Stats:`);
-      result.push(`   Before: ${beforeLines.length} lines`);
-      result.push(`   After: ${afterLines.length} lines`);
-      result.push(
-        `   Change: ${afterLines.length - beforeLines.length > 0 ? "+" : ""}${
-          afterLines.length - beforeLines.length
-        } lines`
-      );
-      result.push(`${"=".repeat(60)}`);
 
       return result.join("\n");
     } catch (error) {
