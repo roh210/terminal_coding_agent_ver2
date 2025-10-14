@@ -53,3 +53,6 @@ coverage/
 # Misc
 .env.test
 .vercel
+
+*.md # Ignore all markdown files
+!README.md

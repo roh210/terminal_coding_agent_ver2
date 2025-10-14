@@ -3,14 +3,14 @@ import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import { SuggestionList } from "./SuggestionList.js";
 import { getSrcFiles } from "../agent/utils/fileWalker.js";
-import { filterTools, filterFiles } from "../agent/utils/fuzzyFilter.js";
+import { filterFiles } from "../agent/utils/fuzzyFilter.js";
 
 interface AutocompleteInputProps {
   onSubmit: (value: string) => void;
 }
 
 /**
- * Autocomplete input component with tool and file suggestions
+ * Autocomplete input component with file reference suggestions
  */
 export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   onSubmit,
@@ -18,7 +18,6 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [mode, setMode] = useState<"tools" | "files">("tools");
   const [fileList, setFileList] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -30,10 +29,9 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   // Update suggestions when input changes
   useEffect(() => {
     const lastAtIndex = input.lastIndexOf("@");
-    const lastExclamationIndex = input.lastIndexOf("!");
 
-    // Check if we're in file mode (@ detected and it's after !)
-    if (lastAtIndex !== -1 && lastAtIndex > lastExclamationIndex) {
+    // Check if we're in file reference mode (@ detected)
+    if (lastAtIndex !== -1) {
       // Refresh file list when user types @ to get latest files
       getSrcFiles().then((freshFiles) => {
         setFileList(freshFiles);
@@ -41,30 +39,14 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         const afterAt = input.slice(lastAtIndex);
         const filtered = filterFiles(afterAt, freshFiles);
         setSuggestions(filtered);
-        setMode("files");
         setShowSuggestions(filtered.length > 0);
         setSelectedIndex(0);
       });
-    } else if (
-      lastExclamationIndex !== -1 &&
-      lastExclamationIndex > lastAtIndex
-    ) {
-      // Tool mode with ! trigger
-      const afterExclamation = input.slice(lastExclamationIndex);
-      const filtered = filterTools(afterExclamation);
-      setSuggestions(filtered);
-      setMode("tools");
-      setShowSuggestions(filtered.length > 0);
-      setSelectedIndex(0);
     } else {
-      // Default: show tools when typing without special character
-      const filtered = filterTools(input);
-      setSuggestions(filtered);
-      setMode("tools");
-      setShowSuggestions(input.trim().length > 0 && filtered.length > 0);
-      setSelectedIndex(0);
+      // No @ symbol - hide suggestions
+      setShowSuggestions(false);
     }
-  }, [input]); // Removed fileList from dependencies to avoid infinite loop
+  }, [input]);
 
   // Handle keyboard navigation
   useInput((inputKey, key) => {
@@ -79,38 +61,19 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         prev < suggestions.length - 1 ? prev + 1 : 0
       );
     } else if (key.tab || (key.return && selectedIndex >= 0)) {
-      // Insert selected suggestion
+      // Insert selected file reference
       const selected = suggestions[selectedIndex];
-
-      if (mode === "files") {
-        // Replace from @ onwards with selected file
-        const lastAtIndex = input.lastIndexOf("@");
-        const newInput = input.slice(0, lastAtIndex) + "@" + selected;
-        setInput(newInput);
-        setShowSuggestions(false);
-      } else {
-        // Tool mode - replace from ! onwards or entire input
-        const lastExclamationIndex = input.lastIndexOf("!");
-        if (lastExclamationIndex !== -1) {
-          // Replace from ! onwards with selected tool
-          const newInput =
-            input.slice(0, lastExclamationIndex) + "!" + selected;
-          setInput(newInput);
-        } else {
-          // Replace entire input with selected tool
-          setInput(selected);
-        }
-        setShowSuggestions(false);
-      }
+      const lastAtIndex = input.lastIndexOf("@");
+      const newInput = input.slice(0, lastAtIndex) + "@" + selected;
+      setInput(newInput);
+      setShowSuggestions(false);
     } else if (key.escape) {
       setShowSuggestions(false);
     }
   });
 
   const handleSubmit = (value: string) => {
-    // Clean up the input: remove @ and ! symbols used for browsing
-    const cleanedValue = value.replace(/@/g, "").replace(/!/g, "");
-    onSubmit(cleanedValue);
+    onSubmit(value);
   };
 
   return (
@@ -132,14 +95,14 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         <SuggestionList
           suggestions={suggestions}
           selectedIndex={selectedIndex}
-          mode={mode}
+          mode="files"
         />
       )}
 
       {!showSuggestions && input.length === 0 && (
         <Box marginTop={1}>
           <Text dimColor>
-            💡 Tip: Use ! for tools, @ for files, or just start typing
+            💡 Tip: Use @filename to reference files in your request
           </Text>
         </Box>
       )}

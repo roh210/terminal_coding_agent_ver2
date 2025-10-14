@@ -50,9 +50,23 @@ export type CreateDirectoryInput = {
   path: string;
 };
 
+export type ExecuteCodeInput = {
+  code: string;
+  language?: "python" | "javascript" | "bash" | "go" | "rust";
+  timeout?: number;
+};
+
+export type RunShellCommandInput = {
+  command: string;
+  workingDirectory?: string;
+  timeout?: number;
+};
+
 // Union of all possible tool inputs
 export type ToolInput =
   | ReadFileInput
   | ListFilesInput
   | EditFileInput
-  | CreateDirectoryInput;
+  | CreateDirectoryInput
+  | ExecuteCodeInput
+  | RunShellCommandInput;
