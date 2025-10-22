@@ -2,9 +2,10 @@ import fs from "fs/promises";
 import nodePath from "path";
 import { ToolDefinition } from "./../types.js";
 import { UndoManager } from "../versionControl/index.js";
+import { projectContext } from "../context/ProjectContext.js";
 
-// Initialize undo manager with current working directory
-const undoManager = new UndoManager(process.cwd());
+// Initialize undo manager with project context
+const undoManager = new UndoManager(projectContext.getProjectRoot());
 
 export const undoEditTool: ToolDefinition = {
   name: "undo_edit",
@@ -27,7 +28,9 @@ export const undoEditTool: ToolDefinition = {
     }
 
     const path: string = args.path as string;
-    const resolvedPath = nodePath.resolve(path);
+
+    // Use projectContext to resolve path relative to where agent was invoked
+    const resolvedPath = projectContext.resolvePath(path);
 
     try {
       // Check if undo is available

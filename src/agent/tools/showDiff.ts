@@ -1,9 +1,10 @@
 import nodePath from "path";
 import { ToolDefinition } from "./../types.js";
 import { UndoManager, DiffViewer } from "../versionControl/index.js";
+import { projectContext } from "../context/ProjectContext.js";
 
-// Initialize undo manager with current working directory
-const undoManager = new UndoManager(process.cwd());
+// Initialize undo manager with project context
+const undoManager = new UndoManager(projectContext.getProjectRoot());
 
 export const showDiffTool: ToolDefinition = {
   name: "show_diff",
@@ -26,7 +27,9 @@ export const showDiffTool: ToolDefinition = {
     }
 
     const path: string = args.path as string;
-    const resolvedPath = nodePath.resolve(path);
+
+    // Use projectContext to resolve path relative to where agent was invoked
+    const resolvedPath = projectContext.resolvePath(path);
 
     try {
       // Get the edit record

@@ -3,10 +3,10 @@
  *
  * Handles creation and parsing of execution plans from AI responses.
  *
- * This module is organized into three main concerns:
+ * This module is organized into:
  * - Plan Creation: High-level orchestration and context loading
- * - JSON Parsing: Extracting and validating JSON from AI responses
- * - Fallback Converter: Handling non-standard AI response formats
+ * - Parsers: Chain of Responsibility for extracting JSON
+ * - Validators: Plan structure validation
  */
 
 // Main plan creation functions
@@ -17,8 +17,13 @@ export {
   loadReadmeContext,
 } from "./planCreation.js";
 
-// JSON parsing and validation
-export { extractJsonFromResponse, parsePlan } from "./jsonParsing.js";
+// Parser chain and handlers (Chain of Responsibility pattern)
+export { ParserChain } from "./parsers/index.js";
+export type { ParserResult, IParserHandler } from "./parsers/index.js";
 
-// Fallback converter for AI format issues
+// Validators
+export { PlanValidator } from "./validators/index.js";
+
+// Legacy exports for backward compatibility (deprecated - use ParserChain and PlanValidator)
+export { extractJsonFromResponse, parsePlan } from "./jsonParsing.js";
 export { convertFunctionCallToPlan } from "./fallbackConverter.js";

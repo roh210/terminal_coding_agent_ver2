@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import { existsSync } from "fs";
 import nodePath from "path";
 import { ToolDefinition, ReadFileInput } from ".././types.js";
+import { projectContext } from "../context/ProjectContext.js";
 
 export const readFileTool: ToolDefinition = {
   name: "read_file",
@@ -24,7 +25,9 @@ export const readFileTool: ToolDefinition = {
 
     const input = args as ReadFileInput;
     const path: string = input.path;
-    const resolvedPath = nodePath.resolve(path);
+
+    // Use projectContext to resolve path relative to where agent was invoked
+    const resolvedPath = projectContext.resolvePath(path);
 
     if (!existsSync(resolvedPath)) {
       throw new Error(`File at path ${path} does not exist.`);

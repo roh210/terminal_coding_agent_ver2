@@ -9,7 +9,8 @@ import {
   COLORS,
   ICONS,
 } from "../constants.js";
-import { extractJsonFromResponse, parsePlan } from "./jsonParsing.js";
+import { ParserChain } from "./parsers/index.js";
+import { PlanValidator } from "./validators/index.js";
 
 /**
  * Loads README.md content to provide project context to the AI
@@ -88,9 +89,11 @@ export const createPlan = async (
     return null;
   }
 
-  // Extract JSON from response
-  const jsonString = extractJsonFromResponse(content!);
-  if (!jsonString) {
+  // Extract JSON from response using parser chain
+  const parserChain = new ParserChain();
+  const parserResult = parserChain.parse(content!);
+
+  if (!parserResult || !parserResult.success) {
     console.log(
       `\n${COLORS.yellow}${ICONS.warning} No JSON found in planning response${COLORS.reset}`
     );
@@ -98,12 +101,14 @@ export const createPlan = async (
     return null;
   }
 
-  // Parse and validate plan
-  const plan = parsePlan(jsonString);
+  const jsonString = parserResult.jsonString!;
+
+  // Validate and parse plan
+  const plan = PlanValidator.validate(jsonString);
 
   if (!plan) {
     console.log(
-      `\n${COLORS.red}${ICONS.error} Failed to parse plan. Raw AI response was:${COLORS.reset}`
+      `\n${COLORS.red}${ICONS.error} Failed to validate plan. Raw AI response was:${COLORS.reset}`
     );
     console.log(`${COLORS.gray}${content}${COLORS.reset}`);
   }

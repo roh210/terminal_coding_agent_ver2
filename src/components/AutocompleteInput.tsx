@@ -9,8 +9,15 @@ interface AutocompleteInputProps {
   onSubmit: (value: string) => void;
 }
 
+// Available slash commands
+const SLASH_COMMANDS = [
+  { command: "/help", description: "Show available commands" },
+  { command: "/sessions", description: "Switch between project sessions" },
+  { command: "/history", description: "View conversation history" },
+];
+
 /**
- * Autocomplete input component with file reference suggestions
+ * Autocomplete input component with file reference and slash command suggestions
  */
 export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   onSubmit,
@@ -20,6 +27,9 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [fileList, setFileList] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionMode, setSuggestionMode] = useState<"files" | "commands">(
+    "files"
+  );
 
   // Load file list on mount
   useEffect(() => {
@@ -28,9 +38,22 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
 
   // Update suggestions when input changes
   useEffect(() => {
-    const lastAtIndex = input.lastIndexOf("@");
+    // Check for slash commands (must be at start)
+    if (input.startsWith("/")) {
+      const query = input.toLowerCase();
+      const filtered = SLASH_COMMANDS.filter((cmd) =>
+        cmd.command.startsWith(query)
+      ).map((cmd) => cmd.command);
+
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setSuggestionMode("commands");
+      setSelectedIndex(0);
+      return;
+    }
 
     // Check if we're in file reference mode (@ detected)
+    const lastAtIndex = input.lastIndexOf("@");
     if (lastAtIndex !== -1) {
       // Refresh file list when user types @ to get latest files
       getSrcFiles().then((freshFiles) => {
@@ -40,10 +63,11 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         const filtered = filterFiles(afterAt, freshFiles);
         setSuggestions(filtered);
         setShowSuggestions(filtered.length > 0);
+        setSuggestionMode("files");
         setSelectedIndex(0);
       });
     } else {
-      // No @ symbol - hide suggestions
+      // No @ symbol or / - hide suggestions
       setShowSuggestions(false);
     }
   }, [input]);
@@ -61,11 +85,19 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         prev < suggestions.length - 1 ? prev + 1 : 0
       );
     } else if (key.tab || (key.return && selectedIndex >= 0)) {
-      // Insert selected file reference
+      // Insert selected suggestion
       const selected = suggestions[selectedIndex];
-      const lastAtIndex = input.lastIndexOf("@");
-      const newInput = input.slice(0, lastAtIndex) + "@" + selected;
-      setInput(newInput);
+
+      if (suggestionMode === "commands") {
+        // Replace entire input with selected command
+        setInput(selected);
+      } else {
+        // Insert selected file reference (existing behavior)
+        const lastAtIndex = input.lastIndexOf("@");
+        const newInput = input.slice(0, lastAtIndex) + "@" + selected;
+        setInput(newInput);
+      }
+
       setShowSuggestions(false);
     } else if (key.escape) {
       setShowSuggestions(false);
@@ -95,14 +127,15 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         <SuggestionList
           suggestions={suggestions}
           selectedIndex={selectedIndex}
-          mode="files"
+          mode={suggestionMode}
         />
       )}
 
       {!showSuggestions && input.length === 0 && (
         <Box marginTop={1}>
           <Text dimColor>
-            💡 Tip: Use @filename to reference files in your request
+            💡 Tip: Use @filename to reference files in your request , use / to
+            get list of commands
           </Text>
         </Box>
       )}

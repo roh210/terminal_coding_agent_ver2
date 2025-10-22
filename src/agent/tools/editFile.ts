@@ -3,9 +3,10 @@ import { existsSync, readFileSync } from "fs";
 import nodePath from "path";
 import { ToolDefinition, EditFileInput } from "./../types.js";
 import { UndoManager } from "../versionControl/index.js";
+import { projectContext } from "../context/ProjectContext.js";
 
-// Initialize undo manager with current working directory
-const undoManager = new UndoManager(process.cwd());
+// Initialize undo manager with project context
+const undoManager = new UndoManager(projectContext.getProjectRoot());
 
 export const editFileTool: ToolDefinition = {
   name: "edit_file",
@@ -39,7 +40,9 @@ export const editFileTool: ToolDefinition = {
     const path: string = input.path;
     const oldStr: string = input.old_str;
     const newStr: string = input.new_str;
-    const resolvedPath = nodePath.resolve(path);
+
+    // Use projectContext to resolve path relative to where agent was invoked
+    const resolvedPath = projectContext.resolvePath(path);
 
     //Validate that old_str and new_str are different
     if (oldStr === newStr) {

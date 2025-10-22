@@ -5,7 +5,7 @@ import { render } from "ink";
 import { Agent } from "./agent/agent.js";
 import * as dotenv from "dotenv";
 import tools from "./agent/tools/index.js";
-import { formatToolConsentRequest } from "./agent/formatter.js";
+import { formatterService } from "./agent/formatting/index.js";
 import { AutocompleteInput } from "./components/AutocompleteInput.js";
 import { ConfirmPrompt } from "./components/ConfirmPrompt.js";
 import { COLORS } from "./agent/constants.js";
@@ -80,7 +80,7 @@ async function getToolConsent(message: string): Promise<boolean> {
   // Parse tool name and arguments from message
   const match = message.match(/^(\w+)\((.*)\)$/s);
   const formattedMessage = match
-    ? formatToolConsentRequest(match[1], JSON.parse(match[2]))
+    ? formatterService.formatToolConsentRequest(match[1], JSON.parse(match[2]))
     : message;
 
   const fullMessage =

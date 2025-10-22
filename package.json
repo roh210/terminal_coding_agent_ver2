@@ -16,15 +16,20 @@
     "@types/node": "^24.7.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
+    "ink-testing-library": "^4.0.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.4.1",
     "diff": "^8.0.2",
     "dotenv": "^17.2.3",
     "fuzzysort": "^3.1.0",
+    "gpt-tokenizer": "^3.2.0",
     "ink": "^6.3.1",
     "ink-text-input": "^6.0.0",
     "openai": "^6.2.0",
-    "react": "^19.2.0"
+    "react": "^19.2.0",
+    "sqlite3": "^5.1.7"
   }
 }

@@ -1,8 +1,9 @@
 import { ToolDefinition } from "./../types.js";
 import { UndoManager } from "../versionControl/index.js";
+import { projectContext } from "../context/ProjectContext.js";
 
-// Initialize undo manager with current working directory
-const undoManager = new UndoManager(process.cwd());
+// Initialize undo manager with project context
+const undoManager = new UndoManager(projectContext.getProjectRoot());
 
 export const listRecentEditsTool: ToolDefinition = {
   name: "list_recent_edits",

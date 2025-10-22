@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import { existsSync } from "fs";
 import nodePath from "path";
 import { ToolDefinition, ListFilesInput } from "../types.js";
+import { projectContext } from "../context/ProjectContext.js";
 
 export const listFilesTool: ToolDefinition = {
   name: "list_files",
@@ -20,7 +21,9 @@ export const listFilesTool: ToolDefinition = {
     // ListFilesInput allows path to be optional
     const input = args as ListFilesInput;
     const path: string = input.path ?? ".";
-    const rPath = nodePath.resolve(path);
+
+    // Use projectContext to resolve path relative to where agent was invoked
+    const rPath = projectContext.resolvePath(path);
 
     //Check if path exists and is a directory
     if (!existsSync(rPath)) {

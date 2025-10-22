@@ -4,11 +4,11 @@ import { Box, Text } from "ink";
 interface SuggestionListProps {
   suggestions: string[];
   selectedIndex: number;
-  mode: "files";
+  mode: "files" | "commands";
 }
 
 /**
- * Displays a list of file suggestions with keyboard navigation
+ * Displays a list of suggestions (files or slash commands) with keyboard navigation
  */
 export const SuggestionList: React.FC<SuggestionListProps> = ({
   suggestions,
@@ -19,8 +19,8 @@ export const SuggestionList: React.FC<SuggestionListProps> = ({
     return null;
   }
 
-  const title = "Files:";
-  const icon = "📁";
+  const title = mode === "commands" ? "Commands:" : "Files:";
+  const icon = mode === "commands" ? "⚡" : "📁";
 
   return (
     <Box flexDirection="column" marginTop={1}>
