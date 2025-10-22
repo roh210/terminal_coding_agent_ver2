@@ -1,0 +1,11 @@
+# Mark PHASE documentation files as documentation (hidden by default on GitHub)
+PHASE*.md linguist-documentation
+REFACTORING*.md linguist-documentation
+PROJECT_SUMMARY.md linguist-documentation
+PROJECT_VISUAL_SUMMARY.md linguist-documentation
+COMPOSING_SOFTWARE_CONCEPTS.md linguist-documentation
+FURTHER_REFACTORING_ANALYSIS.md linguist-documentation
+SESSION_CONTEXT_FIX.md linguist-documentation
+SANDBOX_DESIGN_EXPLANATION.md linguist-documentation
+DAYTONA_DEBUGGING_JOURNAL.md linguist-documentation
+TESTING_GUIDE.md linguist-documentation
