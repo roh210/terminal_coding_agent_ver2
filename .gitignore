@@ -54,5 +54,8 @@ coverage/
 .env.test
 .vercel
 
+# Documentation (keep locally, don't push to GitHub)
+docs/
+
 *.md # Ignore all markdown files
 !README.md
